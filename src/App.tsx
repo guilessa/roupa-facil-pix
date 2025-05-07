@@ -1,4 +1,3 @@
-
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -8,6 +7,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import CheckoutPage from "./components/CheckoutPage";
 import ThankYouPage from "./components/ThankYouPage";
+import { Admin } from "./pages/Admin";
 import { CartSummary, CartItem, Size, SizeQuantity } from "./types/types";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -129,6 +129,7 @@ const App = () => {
           } />
           <Route path="/checkout" element={<CheckoutPage cart={cartSummary} />} />
           <Route path="/obrigado" element={<ThankYouPage cart={cartSummary} onClearCart={handleClearCart} />} />
+          <Route path="/admin" element={<Admin />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>
