@@ -83,21 +83,21 @@ const ThankYouPage = ({
           <Separator className="mb-4" />
           
           {orderDetails && <div className="mb-4">
-              <p><span className="font-medium">Nome:</span> {orderDetails.customer_name}</p>
-              <p><span className="font-medium">Telefone:</span> {formatPhone(orderDetails.customer_phone)}</p>
+              
+              
             </div>}
           
-          <p className="font-medium">Total: {cart.totalPrice.toLocaleString('pt-BR', {
+          <p className="text-3xl font-extrabold">Total: {cart.totalPrice.toLocaleString('pt-BR', {
             style: 'currency',
             currency: 'BRL'
           })}</p>
           
           <div className="mt-6">
             <h4 className="font-medium mb-2">Instruções de Pagamento:</h4>
-            <p className="text-sm">
+            <p className="text-base">
               1. Abra o aplicativo do seu banco<br />
               2. Selecione a opção PIX<br />
-              3. Envie o valor para a chave PIX: <span className="text-base font-extrabold text-red-700">+55 21 96842-8374</span><br />
+              3. Envie o valor para a chave PIX: <span className="text-slate-900 font-extrabold text-sm">+55 21 96842-8374</span><br />
               4. Envie o comprovante pelo WhatsApp
             </p>
           </div>
@@ -108,9 +108,7 @@ const ThankYouPage = ({
             Enviar Comprovante via WhatsApp
           </Button>
           
-          <Button variant="outline" onClick={() => navigate("/")}>
-            Voltar à Loja
-          </Button>
+          
         </div>
       </div>
     </div>;
