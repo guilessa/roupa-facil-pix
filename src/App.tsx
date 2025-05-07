@@ -1,7 +1,6 @@
 
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { useState, useEffect } from "react";
@@ -9,7 +8,7 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import CheckoutPage from "./components/CheckoutPage";
 import ThankYouPage from "./components/ThankYouPage";
-import { CartSummary, CartItem } from "./types/types";
+import { CartSummary, CartItem, Size, SizeQuantity } from "./types/types";
 import { supabase } from "@/integrations/supabase/client";
 
 const queryClient = new QueryClient();
@@ -115,26 +114,24 @@ const App = () => {
   
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={
-              <Index 
-                cartItems={cartItems} 
-                isLoading={isLoading} 
-                onSizeSelect={handleSizeSelect} 
-                onClearCart={handleClearCart} 
-                cartSummary={cartSummary}
-              />
-            } />
-            <Route path="/checkout" element={<CheckoutPage cart={cartSummary} />} />
-            <Route path="/obrigado" element={<ThankYouPage cart={cartSummary} onClearCart={handleClearCart} />} />
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={
+            <Index 
+              cartItems={cartItems} 
+              isLoading={isLoading} 
+              onSizeSelect={handleSizeSelect} 
+              onClearCart={handleClearCart} 
+              cartSummary={cartSummary}
+            />
+          } />
+          <Route path="/checkout" element={<CheckoutPage cart={cartSummary} />} />
+          <Route path="/obrigado" element={<ThankYouPage cart={cartSummary} onClearCart={handleClearCart} />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
     </QueryClientProvider>
   );
 };
