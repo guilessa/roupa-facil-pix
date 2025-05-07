@@ -2,6 +2,7 @@
 import React from "react";
 import { Size, SizeQuantity } from "@/types/types";
 import { cn } from "@/lib/utils";
+import QuantitySelector from "./QuantitySelector";
 
 interface SizeSelectorProps {
   availableSizes: Size[];
@@ -26,7 +27,7 @@ const SizeSelector = ({
   return (
     <div className="flex flex-col mt-4">
       <h3 className="text-sm font-medium mb-2">Tamanhos:</h3>
-      <div className="grid grid-cols-5 gap-2">
+      <div className="flex flex-wrap gap-3">
         {availableSizes.map((size) => {
           const quantity = getQuantityForSize(size);
           return (
@@ -44,20 +45,14 @@ const SizeSelector = ({
               </button>
               
               {quantity > 0 && (
-                <div className="mt-2 flex items-center">
-                  <button
-                    className="w-6 h-6 bg-gray-200 rounded-l flex items-center justify-center text-gray-700"
-                    onClick={() => handleQuantityChange(size, Math.max(0, quantity - 1))}
-                  >
-                    -
-                  </button>
-                  <span className="w-8 text-center text-sm">{quantity}</span>
-                  <button
-                    className="w-6 h-6 bg-gray-200 rounded-r flex items-center justify-center text-gray-700"
-                    onClick={() => handleQuantityChange(size, quantity + 1)}
-                  >
-                    +
-                  </button>
+                <div className="mt-2">
+                  <QuantitySelector
+                    quantity={quantity}
+                    onChange={(newQuantity) => handleQuantityChange(size, newQuantity)}
+                    min={0}
+                    max={99}
+                    size="sm"
+                  />
                 </div>
               )}
             </div>
