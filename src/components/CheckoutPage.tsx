@@ -1,6 +1,8 @@
 
 import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { CartSummary } from "@/types/types";
 import { useNavigate } from "react-router-dom";
 import { Separator } from "@/components/ui/separator";
@@ -15,6 +17,48 @@ interface CheckoutPageProps {
 const CheckoutPage = ({ cart }: CheckoutPageProps) => {
   const navigate = useNavigate();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [customerName, setCustomerName] = useState("");
+  const [customerPhone, setCustomerPhone] = useState("");
+  const [errors, setErrors] = useState({
+    name: "",
+    phone: ""
+  });
+  
+  const validateForm = () => {
+    let isValid = true;
+    const newErrors = {
+      name: "",
+      phone: ""
+    };
+    
+    if (!customerName.trim()) {
+      newErrors.name = "Nome é obrigatório";
+      isValid = false;
+    }
+    
+    if (!customerPhone.trim()) {
+      newErrors.phone = "Telefone é obrigatório";
+      isValid = false;
+    } else if (!/^[0-9]{10,11}$/.test(customerPhone.replace(/\D/g, ''))) {
+      newErrors.phone = "Telefone inválido (DDD + número)";
+      isValid = false;
+    }
+    
+    setErrors(newErrors);
+    return isValid;
+  };
+
+  const formatPhone = (value: string) => {
+    const numbers = value.replace(/\D/g, '');
+    if (numbers.length <= 2) return numbers;
+    if (numbers.length <= 7) return `(${numbers.slice(0, 2)}) ${numbers.slice(2)}`;
+    return `(${numbers.slice(0, 2)}) ${numbers.slice(2, 7)}-${numbers.slice(7, 11)}`;
+  };
+
+  const handlePhoneChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const formattedPhone = formatPhone(e.target.value);
+    setCustomerPhone(formattedPhone);
+  };
   
   const handleConfirmOrder = async () => {
     if (cart.totalQuantity === 0) {
@@ -22,14 +66,18 @@ const CheckoutPage = ({ cart }: CheckoutPageProps) => {
       return;
     }
 
+    if (!validateForm()) {
+      return;
+    }
+
     setIsSubmitting(true);
     try {
-      // 1. Criar o pedido principal
+      // 1. Criar o pedido principal com os dados do cliente
       const { data: orderData, error: orderError } = await supabase
         .from('orders')
         .insert({
-          customer_name: "Cliente Loja",
-          customer_phone: "5521968428374", // Número padrão do sistema
+          customer_name: customerName,
+          customer_phone: customerPhone.replace(/\D/g, ''), // Remove formatação
           total_amount: cart.totalPrice,
           status: 'pending'
         })
@@ -131,6 +179,39 @@ const CheckoutPage = ({ cart }: CheckoutPageProps) => {
                 currency: 'BRL',
               })}
             </span>
+          </div>
+        </div>
+      </div>
+      
+      <div className="mb-8">
+        <h2 className="text-xl font-bold mb-4">Seus Dados</h2>
+        <Separator className="mb-4" />
+        
+        <div className="space-y-4">
+          <div>
+            <Label htmlFor="name">Nome Completo</Label>
+            <Input 
+              id="name" 
+              type="text" 
+              placeholder="Digite seu nome completo" 
+              value={customerName}
+              onChange={(e) => setCustomerName(e.target.value)}
+              className={errors.name ? "border-red-500" : ""}
+            />
+            {errors.name && <p className="text-red-500 text-sm mt-1">{errors.name}</p>}
+          </div>
+          
+          <div>
+            <Label htmlFor="phone">Telefone (WhatsApp)</Label>
+            <Input 
+              id="phone" 
+              type="text" 
+              placeholder="(00) 00000-0000" 
+              value={customerPhone}
+              onChange={handlePhoneChange}
+              className={errors.phone ? "border-red-500" : ""}
+            />
+            {errors.phone && <p className="text-red-500 text-sm mt-1">{errors.phone}</p>}
           </div>
         </div>
       </div>
