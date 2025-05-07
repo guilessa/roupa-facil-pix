@@ -1,9 +1,11 @@
 
-import React from "react";
+import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CartSummary } from "@/types/types";
 import { useNavigate } from "react-router-dom";
 import { Separator } from "@/components/ui/separator";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 interface ThankYouPageProps {
   cart: CartSummary;
@@ -13,9 +15,31 @@ interface ThankYouPageProps {
 const ThankYouPage = ({ cart, onClearCart }: ThankYouPageProps) => {
   const navigate = useNavigate();
   const phoneNumber = "5521968428374";
+  const [orderId, setOrderId] = useState<string | null>(null);
+  
+  useEffect(() => {
+    const getLastOrder = async () => {
+      const { data, error } = await supabase
+        .from('orders')
+        .select('id')
+        .order('created_at', { ascending: false })
+        .limit(1);
+      
+      if (error) {
+        console.error('Erro ao buscar último pedido:', error);
+        return;
+      }
+      
+      if (data && data.length > 0) {
+        setOrderId(data[0].id);
+      }
+    };
+    
+    getLastOrder();
+  }, []);
   
   const handleWhatsApp = () => {
-    const message = encodeURIComponent(`Olá! Acabei de fazer um pedido no valor de ${cart.totalPrice.toLocaleString('pt-BR', {
+    const message = encodeURIComponent(`Olá! Acabei de fazer um pedido #${orderId || ''} no valor de ${cart.totalPrice.toLocaleString('pt-BR', {
       style: 'currency',
       currency: 'BRL',
     })}. Estou enviando o comprovante do pagamento via Pix.`);
@@ -42,6 +66,9 @@ const ThankYouPage = ({ cart, onClearCart }: ThankYouPageProps) => {
         <p className="text-gray-600">
           Seu pedido foi registrado com sucesso. Agora é só fazer o pagamento e enviar o comprovante.
         </p>
+        {orderId && (
+          <p className="mt-2 font-medium">Número do pedido: #{orderId}</p>
+        )}
       </div>
       
       <div className="bg-shop-accent p-6 rounded-lg mb-8">

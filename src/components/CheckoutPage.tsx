@@ -1,9 +1,12 @@
 
-import React from "react";
+import React, { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { CartSummary } from "@/types/types";
 import { useNavigate } from "react-router-dom";
 import { Separator } from "@/components/ui/separator";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 interface CheckoutPageProps {
   cart: CartSummary;
@@ -11,9 +14,60 @@ interface CheckoutPageProps {
 
 const CheckoutPage = ({ cart }: CheckoutPageProps) => {
   const navigate = useNavigate();
+  const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const handleConfirmOrder = () => {
-    navigate("/obrigado");
+  const handleConfirmOrder = async () => {
+    if (cart.totalQuantity === 0) {
+      toast.error("Seu carrinho está vazio.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      // 1. Criar o pedido principal
+      const { data: orderData, error: orderError } = await supabase
+        .from('orders')
+        .insert({
+          customer_name: "Cliente Loja",
+          customer_phone: "5521968428374", // Número padrão do sistema
+          total_amount: cart.totalPrice,
+          status: 'pending'
+        })
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      // 2. Criar os itens do pedido
+      const orderItems = [];
+      for (const item of cart.items) {
+        for (const size of item.selectedSizes) {
+          if (size.quantity > 0) {
+            orderItems.push({
+              order_id: orderData.id,
+              product_id: item.product.id,
+              size: size.size,
+              quantity: size.quantity,
+              price: item.product.price
+            });
+          }
+        }
+      }
+
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .insert(orderItems);
+
+      if (itemsError) throw itemsError;
+
+      toast.success("Pedido criado com sucesso!");
+      navigate("/obrigado");
+    } catch (error) {
+      console.error('Erro ao finalizar pedido:', error);
+      toast.error("Ocorreu um erro ao finalizar o pedido. Tente novamente.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
   
   return (
@@ -104,8 +158,16 @@ const CheckoutPage = ({ cart }: CheckoutPageProps) => {
       <Button 
         className="w-full mt-8 bg-shop-primary hover:bg-shop-secondary text-white py-3 text-lg"
         onClick={handleConfirmOrder}
+        disabled={isSubmitting || cart.totalQuantity === 0}
       >
-        Confirmar Pedido
+        {isSubmitting ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+            Processando...
+          </>
+        ) : (
+          "Confirmar Pedido"
+        )}
       </Button>
     </div>
   );

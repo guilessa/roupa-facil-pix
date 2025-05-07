@@ -4,17 +4,53 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import CheckoutPage from "./components/CheckoutPage";
 import ThankYouPage from "./components/ThankYouPage";
 import { CartSummary, CartItem } from "./types/types";
+import { supabase } from "@/integrations/supabase/client";
 
 const queryClient = new QueryClient();
 
 const App = () => {
   const [cartItems, setCartItems] = useState<CartItem[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(true);
+  
+  useEffect(() => {
+    fetchProducts();
+  }, []);
+
+  const fetchProducts = async () => {
+    try {
+      const { data: products, error } = await supabase
+        .from('products')
+        .select('*');
+      
+      if (error) {
+        throw error;
+      }
+      
+      // Inicializar o carrinho com os produtos do Supabase
+      const initialCart = products.map(product => ({
+        product: {
+          id: product.id,
+          name: product.name,
+          price: product.price,
+          imageUrl: product.image_url,
+          description: product.description || ''
+        },
+        selectedSizes: [] as SizeQuantity[]
+      }));
+      
+      setCartItems(initialCart);
+    } catch (error) {
+      console.error('Erro ao buscar produtos:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
   
   const calculateCartSummary = (): CartSummary => {
     let totalQuantity = 0;
@@ -33,8 +69,46 @@ const App = () => {
     };
   };
   
+  const handleSizeSelect = (productId: string, size: Size, quantity: number) => {
+    setCartItems(prevItems => 
+      prevItems.map(item => {
+        if (item.product.id === productId) {
+          // Check if this size already exists
+          const existingIndex = item.selectedSizes.findIndex(s => s.size === size);
+          
+          let updatedSizes = [...item.selectedSizes];
+          
+          if (existingIndex >= 0) {
+            // Update existing size quantity
+            if (quantity === 0) {
+              // Remove size if quantity is 0
+              updatedSizes = updatedSizes.filter(s => s.size !== size);
+            } else {
+              // Update quantity for existing size
+              updatedSizes[existingIndex] = { ...updatedSizes[existingIndex], quantity };
+            }
+          } else if (quantity > 0) {
+            // Add new size if quantity > 0
+            updatedSizes.push({ size, quantity });
+          }
+          
+          return {
+            ...item,
+            selectedSizes: updatedSizes
+          };
+        }
+        return item;
+      })
+    );
+  };
+  
   const handleClearCart = () => {
-    setCartItems([]);
+    setCartItems(prevItems => 
+      prevItems.map(item => ({
+        ...item,
+        selectedSizes: []
+      }))
+    );
   };
   
   const cartSummary = calculateCartSummary();
@@ -46,7 +120,15 @@ const App = () => {
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Index />} />
+            <Route path="/" element={
+              <Index 
+                cartItems={cartItems} 
+                isLoading={isLoading} 
+                onSizeSelect={handleSizeSelect} 
+                onClearCart={handleClearCart} 
+                cartSummary={cartSummary}
+              />
+            } />
             <Route path="/checkout" element={<CheckoutPage cart={cartSummary} />} />
             <Route path="/obrigado" element={<ThankYouPage cart={cartSummary} onClearCart={handleClearCart} />} />
             <Route path="*" element={<NotFound />} />

@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 interface ProductCardProps {
   product: Product;
   selectedSizes: SizeQuantity[];
-  onSizeSelect: (productId: number, size: Size, quantity: number) => void;
+  onSizeSelect: (size: Size, quantity: number) => void;
 }
 
 const ProductCard = ({
@@ -18,7 +18,7 @@ const ProductCard = ({
   const availableSizes: Size[] = ["PP", "P", "M", "G", "GG"];
   
   const handleSizeSelect = (size: Size, quantity: number) => {
-    onSizeSelect(product.id, size, quantity);
+    onSizeSelect(size, quantity);
   };
 
   const totalQuantity = selectedSizes.reduce((sum, item) => sum + item.quantity, 0);
