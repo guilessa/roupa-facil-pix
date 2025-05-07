@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import {
@@ -17,6 +18,9 @@ interface OrderItem {
   quantity: number;
   price: number;
   product_id: string;
+  product: {
+    name: string;
+  };
 }
 
 interface Order {
@@ -43,7 +47,12 @@ export function Admin() {
         .from('orders')
         .select(`
           *,
-          order_items (*)
+          order_items (
+            *,
+            product:products (
+              name
+            )
+          )
         `)
         .order('created_at', { ascending: false });
 
@@ -57,9 +66,12 @@ export function Admin() {
   }
 
   function calculateTotalBySize(items: OrderItem[]) {
-    const totals: { [key: string]: number } = {};
+    const totals: { [key: string]: { [key: string]: number } } = {};
     items.forEach(item => {
-      totals[item.size] = (totals[item.size] || 0) + item.quantity;
+      if (!totals[item.product.name]) {
+        totals[item.product.name] = {};
+      }
+      totals[item.product.name][item.size] = (totals[item.product.name][item.size] || 0) + item.quantity;
     });
     return totals;
   }
@@ -102,7 +114,6 @@ export function Admin() {
                 <TableHead>Status</TableHead>
                 <TableHead>Total</TableHead>
                 <TableHead>Camisas</TableHead>
-                <TableHead>Total por Tamanho</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -123,14 +134,7 @@ export function Admin() {
                   <TableCell>
                     {order.order_items.map((item, index) => (
                       <div key={index}>
-                        {item.size}: {item.quantity}
-                      </div>
-                    ))}
-                  </TableCell>
-                  <TableCell>
-                    {Object.entries(calculateTotalBySize(order.order_items)).map(([size, total]) => (
-                      <div key={size}>
-                        {size}: {total}
+                        {item.product.name} - {item.size}: {item.quantity}
                       </div>
                     ))}
                   </TableCell>
