@@ -50,7 +50,7 @@ const ThankYouPage = ({
     return phone;
   };
   const handleWhatsApp = () => {
-    const encodedMessage = encodeURIComponent(`Olá! Acabei de fazer um pedido na Roupa Fácil no valor de ${cart.totalPrice.toLocaleString('pt-BR', {
+    const encodedMessage = encodeURIComponent(`Olá! Acabei de fazer um pedido na InterStore no valor de ${cart.totalPrice.toLocaleString('pt-BR', {
       style: 'currency',
       currency: 'BRL'
     })}. Gostaria de enviar o comprovante do PIX.`);
