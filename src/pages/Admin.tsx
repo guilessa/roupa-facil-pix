@@ -11,6 +11,8 @@ import {
 } from "@/components/ui/table";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
 
 interface OrderItem {
   id: string;
@@ -54,7 +56,7 @@ export function Admin() {
             )
           )
         `)
-        .order('created_at', { ascending: false });
+        .order('customer_name', { ascending: true });
 
       if (error) throw error;
       setOrders(data || []);
@@ -62,6 +64,40 @@ export function Admin() {
       console.error('Erro ao buscar pedidos:', error);
     } finally {
       setLoading(false);
+    }
+  }
+
+  async function handleConfirmPayment(orderId: string) {
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ status: 'approved' })
+        .eq('id', orderId);
+
+      if (error) throw error;
+
+      toast.success('Pagamento confirmado com sucesso!');
+      fetchOrders(); // Atualiza a lista de pedidos
+    } catch (error) {
+      console.error('Erro ao confirmar pagamento:', error);
+      toast.error('Erro ao confirmar pagamento. Tente novamente.');
+    }
+  }
+
+  async function handleCancelPayment(orderId: string) {
+    try {
+      const { error } = await supabase
+        .from('orders')
+        .update({ status: 'pending' })
+        .eq('id', orderId);
+
+      if (error) throw error;
+
+      toast.success('Pagamento cancelado com sucesso!');
+      fetchOrders(); // Atualiza a lista de pedidos
+    } catch (error) {
+      console.error('Erro ao cancelar pagamento:', error);
+      toast.error('Erro ao cancelar pagamento. Tente novamente.');
     }
   }
 
@@ -114,6 +150,7 @@ export function Admin() {
                 <TableHead>Status</TableHead>
                 <TableHead>Total</TableHead>
                 <TableHead>Camisas</TableHead>
+                <TableHead>Ações</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -137,6 +174,28 @@ export function Admin() {
                         {item.product.name} - {item.size}: {item.quantity}
                       </div>
                     ))}
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex gap-2">
+                      {order.status !== 'approved' && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleConfirmPayment(order.id)}
+                        >
+                          Confirmar Pagamento
+                        </Button>
+                      )}
+                      {order.status === 'approved' && (
+                        <Button
+                          variant="destructive"
+                          size="sm"
+                          onClick={() => handleCancelPayment(order.id)}
+                        >
+                          Cancelar Pagamento
+                        </Button>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
