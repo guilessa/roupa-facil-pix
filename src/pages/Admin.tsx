@@ -13,6 +13,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 interface OrderItem {
   id: string;
@@ -38,6 +39,7 @@ interface Order {
 export function Admin() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
+  const [summary, setSummary] = useState<{ [key: string]: { [key: string]: number } }>({});
 
   useEffect(() => {
     fetchOrders();
@@ -60,6 +62,18 @@ export function Admin() {
 
       if (error) throw error;
       setOrders(data || []);
+      
+      // Calcular o resumo dos pedidos
+      const newSummary: { [key: string]: { [key: string]: number } } = {};
+      data?.forEach(order => {
+        order.order_items.forEach(item => {
+          if (!newSummary[item.product.name]) {
+            newSummary[item.product.name] = {};
+          }
+          newSummary[item.product.name][item.size] = (newSummary[item.product.name][item.size] || 0) + item.quantity;
+        });
+      });
+      setSummary(newSummary);
     } catch (error) {
       console.error('Erro ao buscar pedidos:', error);
     } finally {
@@ -136,73 +150,107 @@ export function Admin() {
     <div className="container mx-auto py-8">
       <h1 className="text-3xl font-bold mb-8">Painel de Administração</h1>
       
-      <Card>
-        <CardHeader>
-          <CardTitle>Pedidos</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Data</TableHead>
-                <TableHead>Nome</TableHead>
-                <TableHead>Telefone</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Total</TableHead>
-                <TableHead>Camisas</TableHead>
-                <TableHead>Ações</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {orders.map((order) => (
-                <TableRow key={order.id}>
-                  <TableCell>
-                    {new Date(order.created_at).toLocaleDateString('pt-BR')}
-                  </TableCell>
-                  <TableCell>{order.customer_name}</TableCell>
-                  <TableCell>{formatPhone(order.customer_phone)}</TableCell>
-                  <TableCell>{order.status || 'Pendente'}</TableCell>
-                  <TableCell>
-                    {order.total_amount.toLocaleString('pt-BR', {
-                      style: 'currency',
-                      currency: 'BRL'
-                    })}
-                  </TableCell>
-                  <TableCell>
-                    {order.order_items.map((item, index) => (
-                      <div key={index}>
-                        {item.product.name} - {item.size}: {item.quantity}
-                      </div>
-                    ))}
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex gap-2">
-                      {order.status !== 'approved' && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleConfirmPayment(order.id)}
-                        >
-                          Confirmar Pagamento
-                        </Button>
-                      )}
-                      {order.status === 'approved' && (
-                        <Button
-                          variant="destructive"
-                          size="sm"
-                          onClick={() => handleCancelPayment(order.id)}
-                        >
-                          Cancelar Pagamento
-                        </Button>
-                      )}
+      <Tabs defaultValue="orders" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="orders">Pedidos</TabsTrigger>
+          <TabsTrigger value="summary">Resumo de Camisas</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="orders">
+          <Card>
+            <CardHeader>
+              <CardTitle>Pedidos</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Nome</TableHead>
+                    <TableHead>Telefone</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Total</TableHead>
+                    <TableHead>Camisas</TableHead>
+                    <TableHead>Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {orders.map((order) => (
+                    <TableRow key={order.id}>
+                      <TableCell>
+                        {new Date(order.created_at).toLocaleDateString('pt-BR')}
+                      </TableCell>
+                      <TableCell>{order.customer_name}</TableCell>
+                      <TableCell>{formatPhone(order.customer_phone)}</TableCell>
+                      <TableCell>{order.status || 'Pendente'}</TableCell>
+                      <TableCell>
+                        {order.total_amount.toLocaleString('pt-BR', {
+                          style: 'currency',
+                          currency: 'BRL'
+                        })}
+                      </TableCell>
+                      <TableCell>
+                        {order.order_items.map((item, index) => (
+                          <div key={index}>
+                            {item.product.name} - {item.size}: {item.quantity}
+                          </div>
+                        ))}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-2">
+                          {order.status !== 'approved' && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleConfirmPayment(order.id)}
+                            >
+                              Confirmar Pagamento
+                            </Button>
+                          )}
+                          {order.status === 'approved' && (
+                            <Button
+                              variant="destructive"
+                              size="sm"
+                              onClick={() => handleCancelPayment(order.id)}
+                            >
+                              Cancelar Pagamento
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="summary">
+          <Card>
+            <CardHeader>
+              <CardTitle>Resumo de Camisas</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-6">
+                {Object.entries(summary).map(([productName, sizes]) => (
+                  <div key={productName} className="border-b pb-4">
+                    <h3 className="text-lg font-semibold mb-2">{productName}</h3>
+                    <div className="grid grid-cols-2 gap-2">
+                      {Object.entries(sizes).map(([size, quantity]) => (
+                        <div key={size} className="flex justify-between items-center">
+                          <span className="font-medium">{size}:</span>
+                          <span>{quantity}</span>
+                        </div>
+                      ))}
                     </div>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 } 
