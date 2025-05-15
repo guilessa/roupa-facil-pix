@@ -40,6 +40,8 @@ export function Admin() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [loading, setLoading] = useState(true);
   const [summary, setSummary] = useState<{ [key: string]: { [key: string]: number } }>({});
+  const [totalSales, setTotalSales] = useState(0);
+  const [estimatedTotal, setEstimatedTotal] = useState(0);
 
   useEffect(() => {
     fetchOrders();
@@ -62,6 +64,17 @@ export function Admin() {
 
       if (error) throw error;
       setOrders(data || []);
+      
+      // Calcular o total de vendas aprovadas
+      const approvedTotal = data
+        ?.filter(order => order.status === 'approved')
+        .reduce((sum, order) => sum + order.total_amount, 0) || 0;
+      setTotalSales(approvedTotal);
+
+      // Calcular o valor estimado total (todos os pedidos)
+      const totalEstimated = data
+        ?.reduce((sum, order) => sum + order.total_amount, 0) || 0;
+      setEstimatedTotal(totalEstimated);
       
       // Calcular o resumo dos pedidos
       const newSummary: { [key: string]: { [key: string]: number } } = {};
@@ -149,6 +162,36 @@ export function Admin() {
   return (
     <div className="container mx-auto py-8">
       <h1 className="text-3xl font-bold mb-8">Painel de Administração</h1>
+      
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+        <Card>
+          <CardHeader>
+            <CardTitle>Total de Vendas Aprovadas</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-green-600">
+              {totalSales.toLocaleString('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+              })}
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Valor Estimado Total</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-3xl font-bold text-blue-600">
+              {estimatedTotal.toLocaleString('pt-BR', {
+                style: 'currency',
+                currency: 'BRL'
+              })}
+            </p>
+          </CardContent>
+        </Card>
+      </div>
       
       <Tabs defaultValue="orders" className="space-y-4">
         <TabsList>
